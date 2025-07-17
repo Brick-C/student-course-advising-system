@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
@@ -6,7 +6,7 @@ from flask_jwt_extended import (
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
+import traceback
 from app.core.responses import internal_server_error
 from app.api.controllers.update import (
     change_password_controller,
@@ -40,11 +40,19 @@ def login():
     """
     try:
         data = request.get_json()
+        if not data:
+            # Handle cases where JSON is missing or malformed
+            return bad_request("Missing or invalid JSON in request body")#type:ignore
         student_id = data.get("student_id")
         raw_password = data.get("password")
         return login_controller(student_id, raw_password)
-    except:
+    # --- MODIFIED EXCEPTION HANDLING ---
+    except Exception as e:
+        # Log the actual error to your Flask console
+        current_app.logger.error(f"An error occurred in /api/login: {e}")
+        current_app.logger.error(traceback.format_exc()) # This provides the full error stack
         return internal_server_error()
+
 
 
 @api_bp.route("/logout", methods=["GET"])

@@ -63,7 +63,10 @@ def error_sending_otp(student_id):
 
 # Success responses
 def login_success(access_token):
-    return jsonify({"message": "Login successful."}, access_token=access_token), 200
+     response_data = {
+        "message":"Login successful", 
+        "access_token" :" access_token"}
+     return jsonify(response_data), 200
 
 
 def logout_success():
