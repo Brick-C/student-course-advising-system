@@ -1,5 +1,5 @@
 from flask_jwt_extended import create_access_token, get_jwt_identity
-from flask import jsonify, current_app, request
+from flask import jsonify, current_app, request, make_response
 
 from app.core.responses import (
     authentication_failed,
@@ -49,7 +49,6 @@ def login_controller(student_id, raw_password):
         return not_eligible(message)
 
     if compare_password(raw_password, student_login.password) is False:
-
         return invalid_password()
 
     if student_login:
@@ -61,7 +60,15 @@ def login_controller(student_id, raw_password):
     current_app.logger.info(
         f"[AUDIT] Successful login for student_id={student_id} from {request.remote_addr}"
     )
-    return login_success(access_token)
+    response = login_success()
+    response.set_cookie(
+        "access_token_cookie",
+        access_token,
+        httponly=True,
+        secure=False,  # Set True in production
+        samesite="Lax",
+    )
+    return response
 
 
 def logout_controller(jti, jwt_blacklist):
@@ -99,7 +106,7 @@ def activate_controller(student_id, raw_otp, raw_password):
         return invalid_otp()
 
     hashed_password = hash_password(raw_password)
-    student_login = StudentLogin(student_id=student_id, password=hashed_password) # type: ignore
+    student_login = StudentLogin(student_id=student_id, password=hashed_password)  # type: ignore
     if save_db(student_login) is False:
         return error_creating_account(student_id)
 
@@ -109,7 +116,7 @@ def activate_controller(student_id, raw_otp, raw_password):
     return account_activated()
 
 
-def welcocme_controller(student_id):
+def welcome_controller(student_id):
     if valid_str_req_value([student_id]) is False:
         return authentication_failed()
 

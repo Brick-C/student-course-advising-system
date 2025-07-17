@@ -7,6 +7,10 @@ jwt_blacklist = set()
 def init_jwt(app):
     app.config.setdefault('JWT_SECRET_KEY', 'super-secret')  # Change this in production!
     app.config.setdefault('JWT_ACCESS_TOKEN_EXPIRES', timedelta(hours=1))
+    app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+    app.config['JWT_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+    app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
+    app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Enable in production if needed
     jwt = JWTManager(app)
 
     @jwt.token_in_blocklist_loader

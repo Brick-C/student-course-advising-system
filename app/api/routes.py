@@ -17,7 +17,7 @@ from app.api.controllers.auth import (
     login_controller,
     logout_controller,
     activate_controller,
-    welcocme_controller,
+    welcome_controller,
 )
 from app.api.controllers.otp import send_otp_controller
 
@@ -34,6 +34,7 @@ def login():
     """
     POST /api/login
     - Logs in a student using student_id and password.
+    - Sets JWT as an HTTP-only cookie on success.
     - Request: {"student_id": "...", "password": "..."}
     - Example:
         curl -X POST http://localhost:8000/api/login -H "Content-Type: application/json" -d '{"student_id": "123", "password": "mypassword"}'
@@ -46,11 +47,7 @@ def login():
         student_id = data.get("student_id")
         raw_password = data.get("password")
         return login_controller(student_id, raw_password)
-    # --- MODIFIED EXCEPTION HANDLING ---
-    except Exception as e:
-        # Log the actual error to your Flask console
-        current_app.logger.error(f"An error occurred in /api/login: {e}")
-        current_app.logger.error(traceback.format_exc()) # This provides the full error stack
+    except:
         return internal_server_error()
 
 
@@ -61,9 +58,9 @@ def logout():
     """
     GET /api/logout
     - Logs out the current student (invalidates JWT).
-    - Requires JWT in Authorization header.
+    - JWT is read from cookie.
     - Example:
-        curl -X GET http://localhost:8000/api/logout -H "Authorization: Bearer <access_token>"
+        curl -X GET http://localhost:8000/api/logout
     """
     try:
         jti = get_jwt()["jti"]
@@ -132,18 +129,18 @@ def send_otp():
         return internal_server_error()
 
 
-@api_bp.route("/welcocme", methods=["GET"])
+@api_bp.route("/welcome", methods=["GET"])
 @jwt_required()
-def welcocme():
+def welcome():
     """
-    GET /api/welcocme
-    - Returns the profile of the logged-in student (requires JWT).
+    GET /api/welcome
+    - Returns the profile of the logged-in student (requires JWT in cookie).
     - Example:
-        curl -X GET http://localhost:8000/api/welcocme -H "Authorization: Bearer <access_token>"
+        curl -X GET http://localhost:8000/api/welcome
     """
     try:
         student_id = get_jwt_identity()
-        return welcocme_controller(student_id)
+        return welcome_controller(student_id)
     except:
         return internal_server_error()
 
@@ -155,10 +152,10 @@ def change_password():
     """
     PATCH /api/change-password
     - Changes the password for the logged-in student.
-    - Requires JWT in Authorization header.
+    - Requires JWT in cookie.
     - Request: {"old_password": "...", "new_password": "..."}
     - Example:
-        curl -X PATCH http://localhost:8000/api/change-password -H "Content-Type: application/json" -H "Authorization: Bearer <access_token>" -d '{"old_password": "oldpass", "new_password": "newpass123"}'
+        curl -X PATCH http://localhost:8000/api/change-password -H "Content-Type: application/json" -d '{"old_password": "oldpass", "new_password": "newpass123"}'
     """
     try:
         student_id = get_jwt_identity()

@@ -1,5 +1,4 @@
 from flask import current_app, request
-import traceback # Import the traceback module
 
 from app.core.emailer import Emailer
 from app.core.keys.otp_manager import OtpManager
@@ -56,14 +55,11 @@ def send_otp_controller(student_id, reason_id):
     try:
         student_otp = StudentOTP.query.filter_by(student_id=student_id).first()
         if student_otp is None:
-            student_otp = StudentOTP(student_id=student_id) # type: ignore
+            student_otp = StudentOTP(student_id=student_id)  # type: ignore
 
         db_otp = OtpManager(student_otp).get_otp()
-
-    # --- MODIFIED EXCEPTION HANDLING ---
     except Exception as e:
         current_app.logger.error(f"ERROR generating OTP for {student_id}: {e}")
-        current_app.logger.error(traceback.format_exc()) 
         return error_generating_otp(student_id)
 
     emailer = Emailer(student.email, reason_ids[reason_id])
@@ -75,11 +71,8 @@ def send_otp_controller(student_id, reason_id):
         current_app.logger.info(
             f"[AUDIT] OTP sent for student_id={student_id} (reason={reason_ids[reason_id]}) from {request.remote_addr}"
         )
-    # --- MODIFIED EXCEPTION HANDLING ---
     except Exception as e:
-        
         current_app.logger.error(f"ERROR sending OTP for {student_id}: {e}")
-        current_app.logger.error(traceback.format_exc()) 
         return error_sending_otp(student_id)
 
     return otp_sent()

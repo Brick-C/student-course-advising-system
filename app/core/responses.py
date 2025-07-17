@@ -1,4 +1,4 @@
-from flask import jsonify, Response
+from flask import jsonify, Response, make_response
 
 
 # General error responses
@@ -63,14 +63,13 @@ def error_sending_otp(student_id):
 
 # Success responses
 def login_success(access_token):
-     response_data = {
-        "message":"Login successful", 
-        "access_token" :" access_token"}
-     return jsonify(response_data), 200
+    return jsonify({"message": "Login successful."}, access_token=access_token), 200
 
 
 def logout_success():
-    return jsonify({"message": "Logout successful."}), 200
+    response = make_response(jsonify({"message": "Logout successful."}), 200)
+    response.delete_cookie("access_token_cookie")
+    return response
 
 
 def account_activated():
@@ -99,6 +98,7 @@ def internal_server_error():
 
 
 def account_locked(lockout_until):
-    return jsonify({
-        "message": f"Account is locked. Try again after {lockout_until}."
-    }), 403
+    return (
+        jsonify({"message": f"Account is locked. Try again after {lockout_until}."}),
+        403,
+    )
